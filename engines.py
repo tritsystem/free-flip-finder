@@ -652,6 +652,9 @@ def build(st):
 
 def main():
     st = load_state()
+    if "--offline" in sys.argv and not st["items"]:
+        # a fresh clone has no data/ (git-ignored); don't overwrite docs/ with an empty page
+        sys.exit("No cached listings in data/state.json - run `python engines.py` (live fetch) first.")
     if "--offline" not in sys.argv:
         print(json.dumps(fetch(st), indent=1))
         save_state(st)
