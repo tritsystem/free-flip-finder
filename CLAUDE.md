@@ -70,7 +70,7 @@ Commands:
 
 ```
 python engines.py            # fetch all sources, then build docs/   (~3-4 min, polite delays)
-python engines.py --offline  # rebuild docs/ from data/state.json only
+python engines.py --offline  # rebuild docs/ from data/state.json only (refuses in a fresh clone: no cache yet)
 python test_engines.py       # must print "0 failed"
 ```
 
