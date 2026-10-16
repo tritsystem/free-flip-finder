@@ -1,0 +1,157 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Free Flip Finds</title>
+<style>
+:root{--bg:#f6f4ef;--card:#fff;--ink:#1d1d1b;--mute:#6b6a64;--line:#dedbd2;--grab:#1f7a3a;--look:#b36b00;--marg:#7a6f5a;--skip:#9a3b32;--accent:#2b5d8a}
+@media (prefers-color-scheme:dark){:root{--bg:#161614;--card:#22221f;--ink:#ecebe6;--mute:#a19f97;--line:#3a3934;--grab:#4fbf6c;--look:#e3a13a;--marg:#b5ab95;--skip:#e0786c;--accent:#7fb2e5}}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);font:15px/1.4 -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif}
+header{padding:14px 16px 8px}
+h1{font-size:20px;margin:0 0 4px}
+.sub{color:var(--mute);font-size:13px}
+.bar{display:flex;flex-wrap:wrap;gap:8px;padding:8px 16px;position:sticky;top:0;background:var(--bg);border-bottom:1px solid var(--line);z-index:2}
+select,button,a.btn{font:inherit;font-size:14px;padding:7px 10px;border:1px solid var(--line);border-radius:8px;background:var(--card);color:var(--ink);text-decoration:none}
+main{padding:12px 16px 40px}
+.card{background:var(--card);border:1px solid var(--line);border-radius:12px;margin:0 0 14px;overflow:hidden}
+.card img{display:block;width:100%;height:220px;object-fit:cover;background:var(--line)}
+.noimg{height:60px;display:flex;align-items:center;justify-content:center;color:var(--mute);background:var(--line);font-size:13px}
+.thumbs{display:flex;gap:4px;padding:4px;overflow-x:auto}
+.thumbs img{width:64px;height:48px;flex:none;border-radius:4px}
+.body{padding:10px 12px 12px}
+.top{display:flex;justify-content:space-between;gap:8px;align-items:flex-start}
+.title{font-weight:600;font-size:16px;margin:0}
+.badge{flex:none;font-size:12px;font-weight:700;color:#fff;border-radius:999px;padding:3px 9px;white-space:nowrap}
+.v-grab{background:var(--grab)}.v-look{background:var(--look)}.v-marg{background:var(--marg)}.v-skip,.v-parts{background:var(--skip)}
+.meta{color:var(--mute);font-size:13px;margin:4px 0 8px}
+.grid{display:flex;flex-wrap:wrap;gap:6px;margin:0 0 8px}
+.kv{background:var(--bg);border:1px solid var(--line);border-radius:6px;padding:3px 7px;font-size:13px}
+.kv b{font-weight:600}
+ul{margin:6px 0 8px;padding-left:18px}
+li{margin:2px 0;font-size:14px}
+.links a{color:var(--accent);margin-right:14px;font-size:14px}
+.wrap{overflow-x:auto;-webkit-overflow-scrolling:touch;border:1px solid var(--line);border-radius:8px;background:var(--card)}
+table{border-collapse:collapse;font-size:13px;min-width:1100px}
+th,td{border-bottom:1px solid var(--line);padding:6px 8px;text-align:left;vertical-align:top}
+th{position:sticky;top:0;background:var(--card)}
+td img{width:90px;height:68px;object-fit:cover;border-radius:4px}
+.status{font-size:12px;color:var(--mute);margin-top:6px}
+.empty{color:var(--mute);padding:30px 0;text-align:center}
+footer{color:var(--mute);font-size:12px;padding:0 16px 30px}
+</style>
+</head>
+<body>
+<header>
+  <h1>Free fix &amp; flip finds near Placerville</h1>
+  <div class="sub" id="sub"></div>
+  <div class="status" id="status"></div>
+</header>
+<div class="bar">
+  <select id="sort">
+    <option value="score">Best flip first</option>
+    <option value="dist">Closest first</option>
+    <option value="new">Newest first</option>
+    <option value="net">Highest est. profit</option>
+  </select>
+  <select id="grp">
+    <option value="">All categories</option>
+    <option>Small engines</option>
+    <option>Appliances</option>
+    <option>AC &amp; climate</option>
+    <option>Electronics</option>
+    <option>Power tools</option>
+  </select>
+  <select id="filt">
+    <option value="good">Hide skip / parts</option>
+    <option value="all">Show everything</option>
+  </select>
+  <button id="view" type="button">Table view</button>
+  <a class="btn" href="listings.csv">CSV</a>
+</div>
+<main id="out"></main>
+<footer>
+  Covers small engines, appliances, AC units, electronics and power tools. Sources: Craigslist free section (all areas within 50 mi) and Freecycle Placerville, Cameron Park, Auburn, Folsom.
+  Facebook Marketplace, OfferUp and Nextdoor need a login, so they are not included: check
+  <a href="https://www.facebook.com/marketplace/sacramento/search?query=free%20mower&maxPrice=0">FB Marketplace</a> by hand.
+  Resale and fix-cost numbers are rule-of-thumb estimates, not measured prices. Tap "Sold comps" to check real
+  eBay sold prices before you drive.
+</footer>
+<script>
+var DATA = /*DATA*/null;
+(function () {
+  var rows = (DATA && DATA.rows) || [];
+  var tableView = false;
+  var out = document.getElementById('out');
+  function esc(s) { return String(s == null ? '' : s).replace(/[&<>"']/g, function (c) { return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]; }); }
+  function vcls(v) { return v === 'Grab it' ? 'v-grab' : v === 'Worth a look' ? 'v-look' : v === 'Marginal' ? 'v-marg' : v === 'Parts / scrap' ? 'v-parts' : 'v-skip'; }
+  function age(r) { return r.age_days == null ? '?' : r.age_days === 0 ? 'today' : r.age_days + 'd ago'; }
+  function specs(r) {
+    var s = [], k;
+    s.push('<span class="kv"><b>' + esc(r.group) + '</b> ' + esc(r.type) + '</span>');
+    if (r.heavy) s.push('<span class="kv"><b>Heavy</b> truck needed</span>');
+    if (r.brand) s.push('<span class="kv"><b>Brand</b> ' + esc(r.brand) + '</span>');
+    s.push('<span class="kv"><b>Condition</b> ' + esc(r.condition) + '</span>');
+    for (k in r.specs) if (r.specs.hasOwnProperty(k)) s.push('<span class="kv"><b>' + esc(k) + '</b> ' + esc(r.specs[k]) + '</span>');
+    for (k in r.attrs) if (r.attrs.hasOwnProperty(k) && r.attrs[k] && !/^(unk|various|n\/a|none)$/i.test(r.attrs[k])) s.push('<span class="kv"><b>Seller: ' + esc(k.replace(/ name \/ number| \/ manufacturer/, '')) + '</b> ' + esc(r.attrs[k]) + '</span>');
+    s.push('<span class="kv"><b>Resale est.</b> $' + r.resale_low + '-' + r.resale_high + '</span>');
+    s.push('<span class="kv"><b>Fix est.</b> $' + r.fix_low + '-' + r.fix_high + '</span>');
+    return s.join('');
+  }
+  function sorted() {
+    var how = document.getElementById('sort').value, f = document.getElementById('filt').value;
+    var g = document.getElementById('grp').value;
+    var list = rows.filter(function (r) { return (!g || r.group === g) && (f === 'all' || (r.verdict !== 'Skip' && r.verdict !== 'Parts / scrap')); });
+    list.sort(function (a, b) {
+      if (how === 'dist') return (a.distance_mi || 999) - (b.distance_mi || 999);
+      if (how === 'new') return (a.posted < b.posted) ? 1 : -1;
+      if (how === 'net') return b.net_est - a.net_est;
+      return b.score - a.score;
+    });
+    return list;
+  }
+  function cards(list) {
+    return list.map(function (r) {
+      var img = r.images && r.images.length ? '<img loading="lazy" src="' + esc(r.images[0]) + '" alt="">' : '<div class="noimg">no photo</div>';
+      var th = r.images && r.images.length > 1 ? '<div class="thumbs">' + r.images.slice(1).map(function (u) { return '<a href="' + esc(u) + '"><img loading="lazy" src="' + esc(u) + '" alt=""></a>'; }).join('') + '</div>' : '';
+      return '<div class="card"><a href="' + esc(r.url) + '">' + img + '</a>' + th + '<div class="body">' +
+        '<div class="top"><p class="title">' + esc(r.title) + '</p><span class="badge ' + vcls(r.verdict) + '">' + esc(r.verdict) + ' ' + r.score + '</span></div>' +
+        '<div class="meta">' + esc(r.place) + ' &middot; ' + (r.distance_mi == null ? '?' : r.distance_mi) + ' mi &middot; ' + age(r) + ' &middot; ' + esc(r.source) + ' &middot; est. profit $' + r.net_est + '</div>' +
+        '<div class="grid">' + specs(r) + '</div>' +
+        '<ul>' + r.why.map(function (w) { return '<li>' + esc(w) + '</li>'; }).join('') + '</ul>' +
+        '<div class="links"><a href="' + esc(r.url) + '">Open listing</a><a href="' + esc(r.comps) + '">Sold comps</a>' +
+        (r.lat != null ? '<a href="https://maps.apple.com/?daddr=' + r.lat + ',' + r.lon + '">Directions</a>' : '') + '</div>' +
+        '</div></div>';
+    }).join('');
+  }
+  function table(list) {
+    var h = '<div class="wrap"><table><tr><th>Photo</th><th>Item</th><th>Verdict</th><th>Score</th><th>Category</th><th>Type</th><th>Brand</th><th>Condition</th><th>Resale est.</th><th>Fix est.</th><th>Profit est.</th><th>Miles</th><th>Posted</th><th>Source</th><th>Why</th></tr>';
+    h += list.map(function (r) {
+      return '<tr><td>' + (r.images && r.images.length ? '<a href="' + esc(r.url) + '"><img loading="lazy" src="' + esc(r.images[0]) + '" alt=""></a>' : '') + '</td>' +
+        '<td><a href="' + esc(r.url) + '">' + esc(r.title) + '</a><br><small>' + esc(r.place) + '</small></td>' +
+        '<td>' + esc(r.verdict) + '</td><td>' + r.score + '</td><td>' + esc(r.group) + '</td><td>' + esc(r.type) + '</td><td>' + esc(r.brand) + '</td><td>' + esc(r.condition) + '</td>' +
+        '<td>$' + r.resale_low + '-' + r.resale_high + '</td><td>$' + r.fix_low + '-' + r.fix_high + '</td><td>$' + r.net_est + '</td>' +
+        '<td>' + (r.distance_mi == null ? '?' : r.distance_mi) + '</td><td>' + age(r) + '</td><td>' + esc(r.source) + '</td>' +
+        '<td>' + esc(r.why.join(' ')) + ' <a href="' + esc(r.comps) + '">comps</a></td></tr>';
+    }).join('');
+    return h + '</table></div>';
+  }
+  function render() {
+    var list = sorted();
+    out.innerHTML = list.length ? (tableView ? table(list) : cards(list)) : '<div class="empty">Nothing matching right now. New listings are checked every 3 hours.</div>';
+  }
+  var d = DATA && DATA.updated ? new Date(DATA.updated) : null;
+  document.getElementById('sub').textContent = rows.length + ' listings' + (d ? ' · updated ' + d.toLocaleString() : '') + ' · refreshes every 3 h';
+  var st = (DATA && DATA.status) || {}, parts = [], k;
+  for (k in st) if (st.hasOwnProperty(k)) parts.push(k + ': ' + st[k]);
+  document.getElementById('status').textContent = parts.join(' | ');
+  document.getElementById('sort').onchange = render;
+  document.getElementById('filt').onchange = render;
+  document.getElementById('grp').onchange = render;
+  document.getElementById('view').onclick = function () { tableView = !tableView; this.textContent = tableView ? 'Card view' : 'Table view'; render(); };
+  render();
+})();
+</script>
+</body>
+</html>
